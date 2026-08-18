@@ -22,8 +22,17 @@
         }
     </script>
 
-    <!-- SEO: скрытый текст для краулеров (видим только для роботов) -->
+    <!-- Стили -->
     <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0b0d15;
+        }
+
         .seo-content {
             position: absolute;
             left: -9999px;
@@ -34,7 +43,66 @@
             opacity: 0;
             pointer-events: none;
         }
-        /* панель документации */
+
+        /* Трёхмерный холст на весь экран */
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* Интерфейс и подсказки поверх сцены */
+        #ui-overlay {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            z-index: 10;
+            pointer-events: none;
+            font-family: 'Courier New', monospace;
+        }
+
+        #spell-text {
+            color: #3affb0;
+            font-size: 1.1rem;
+            text-shadow: 0 0 10px rgba(58, 255, 176, 0.5);
+            margin-bottom: 8px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #spell-text.visible {
+            opacity: 1;
+        }
+
+        #hint-tag {
+            color: #7fc0a0;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        /* Кредиты в правом нижнем углу */
+        #credits {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 10;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        #credits a {
+            color: #6fbe9a;
+            text-decoration: none;
+        }
+
+        #credits a:hover {
+            text-decoration: underline;
+        }
+
+        /* Панель документации */
         #docs-panel {
             position: fixed;
             top: 0;
@@ -129,7 +197,6 @@
                 <li><strong>Формальная верификация</strong> – часть модулей проверена в Lean 4.</li>
             </ul>
             <p>Репозиторий: <a href="https://github.com/daxo-developer/daxo_os" target="_blank">github.com/daxo-developer/daxo_os</a></p>
-            <p>Статьи: <a href="https://daxo-os.hashnode.dev" target="_blank">Hashnode</a> · <a href="https://dev.to/daxo" target="_blank">Dev.to</a></p>
             <p><em>“The metal remembers every electron.”</em></p>
         </div>
     </div>
@@ -146,15 +213,15 @@
         <a href="https://daxo-developer.github.io/" target="_blank">⚡ hub</a>
     </div>
 
-    <!-- SEO-слой для краулеров (скрыт визуально) -->
-    <div class="seo-content" aria-hidden="false">
+    <!-- SEO-слой для краулеров -->
+    <div class="seo-content" aria-hidden="true">
         <h1>Daxo OS – живая микроядерная система</h1>
         <p>Разработана на Rust с нуля. Включает асинхронный планировщик, страничную память, драйверы ATA и клавиатуры, поддержку пользовательских процессов в Ring 3.</p>
         <p>Технологии: x86_64, Assembly, WebAssembly, формальная верификация в Lean.</p>
-        <p>Ссылки: GitHub, Hashnode, Dev.to, Telegram @Daxo_OS.</p>
+        <p>Ссылки: GitHub.</p>
     </div>
 
-    <!-- noscript – для роботов, которые не исполняют JS -->
+    <!-- noscript -->
     <noscript>
         <div style="padding: 20px; background: #0b0d15; color: #b7f0b7;">
             <h1>Daxo OS – Macro‑Cosmic PCB</h1>
@@ -165,16 +232,15 @@
 
     <!-- Импорты Three.js и постобработка -->
     <script type="importmap">
-{
-    "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
     }
-}
     </script>
 
     <script type="module">
-        // ----- Основные импорты Three.js -----
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -184,7 +250,7 @@
         import { GlitchPass } from 'three/addons/postprocessing/GlitchPass.js';
         import { RGBShiftShader } from 'three/addons/shaders/RGBShiftShader.js';
 
-        // ----- Звуковой движок (Web Audio) -----
+        // Звуковой движок (Web Audio)
         let audioCtx = null;
         let droneOsc = null;
         let droneGain = null;
@@ -193,7 +259,6 @@
         function initAudio() {
             if (audioCtx) return;
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            // Дрон – синусоида на 55 Гц с фильтром низких частот
             filter = audioCtx.createBiquadFilter();
             filter.type = 'lowpass';
             filter.frequency.value = 200;
@@ -224,7 +289,7 @@
             osc.stop(audioCtx.currentTime + duration);
         }
 
-        // ----- Инициализация сцены -----
+        // Инициализация сцены
         const container = document.getElementById('three-canvas');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0b0d15);
@@ -240,32 +305,28 @@
         renderer.toneMappingExposure = 1.2;
         container.appendChild(renderer.domElement);
 
-        // ----- Постобработка -----
+        // Постобработка
         const composer = new EffectComposer(renderer);
         const renderPass = new RenderPass(scene, camera);
         composer.addPass(renderPass);
 
-        // Bloom – интенсивное свечение
         const bloomPass = new UnrealBloomPass(
             new THREE.Vector2(window.innerWidth, window.innerHeight),
-            0.6,   // сила
-            0.4,   // радиус
-            0.85   // порог
+            0.6, 0.4, 0.85
         );
         composer.addPass(bloomPass);
 
-        // Chromatic Aberration (расслоение RGB)
+        // Исправленный шейдер хроматической аберрации (RGBShift)
         const chromaticPass = new ShaderPass(RGBShiftShader);
         chromaticPass.uniforms['amount'].value = 0.003;
         composer.addPass(chromaticPass);
 
-        // Glitch (изначально выключен)
         const glitchPass = new GlitchPass();
         glitchPass.goWild = false;
         glitchPass.enabled = false;
         composer.addPass(glitchPass);
 
-        // ----- Освещение -----
+        // Освещение
         const ambient = new THREE.AmbientLight(0x404066, 0.6);
         scene.add(ambient);
         const keyLight = new THREE.DirectionalLight(0xffeedd, 1.2);
@@ -279,7 +340,7 @@
         scene.add(rimLight);
         scene.fog = new THREE.FogExp2(0x0b0d15, 0.035);
 
-        // ----- Пульсирующие дорожки (текстолит) -----
+        // Пульсирующие дорожки (текстолит)
         function createTracePath(seed, complexity = 30) {
             const points = [];
             let x = (Math.random() - 0.5) * 6;
@@ -330,7 +391,7 @@
             });
         }
 
-        // ----- Компоненты (чипы) -----
+        // Компоненты (чипы)
         function createChip(size, color) {
             const group = new THREE.Group();
             const geo = new THREE.BoxGeometry(size.x, size.y, size.z);
@@ -434,7 +495,7 @@
             basePos: new THREE.Vector3(-0.8, 0.15, -1.8),
         });
 
-        // ----- Рейкастер для ховера -----
+        // Рейкастер для ховера
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const clickableObjects = [];
@@ -450,7 +511,6 @@
         let currentHover = null;
         let glitchTimeout = null;
 
-        // Заклинания
         const SPELLS = [
             'MOV EAX, 0xDEADBEEF ; soul transfer',
             'XOR ECX, ECX ; void the ego',
@@ -493,178 +553,102 @@
                 }
             }
 
-            // Сброс предыдущего ховера
             if (currentHover && currentHover !== hoveredComp) {
                 currentHover.hover = false;
                 currentHover.mesh.scale.set(1, 1, 1);
                 document.getElementById('spell-text').classList.remove('visible');
-                // Выключаем глитч
                 if (glitchTimeout) {
                     clearTimeout(glitchTimeout);
                     glitchTimeout = null;
                 }
                 glitchPass.enabled = false;
                 glitchPass.goWild = false;
-                currentHover = null;
             }
 
-            if (hoveredComp) {
-                if (currentHover !== hoveredComp) {
-                    // Новый ховер
-                    hoveredComp.hover = true;
-                    currentHover = hoveredComp;
+            currentHover = hoveredComp;
 
-                    // Заклинание
-                    const spellDiv = document.getElementById('spell-text');
-                    const idx = Math.floor(Math.random() * SPELLS.length);
-                    spellDiv.textContent = SPELLS[idx];
-                    spellDiv.classList.add('visible');
+            if (currentHover) {
+                initAudio();
+                playClick(600, 0.05);
+                currentHover.hover = true;
+                currentHover.mesh.scale.set(1.15, 1.15, 1.15);
 
-                    // Звук
-                    playClick(600 + Math.random() * 800, 0.06);
+                const randomSpell = SPELLS[Math.floor(Math.random() * SPELLS.length)];
+                const spellEl = document.getElementById('spell-text');
+                spellEl.textContent = randomSpell;
+                spellEl.classList.add('visible');
 
-                    // Глитч для CPU
-                    if (hoveredComp.type === 'cpu') {
-                        glitchPass.enabled = true;
-                        glitchPass.goWild = true;
-                        if (glitchTimeout) clearTimeout(glitchTimeout);
-                        glitchTimeout = setTimeout(() => {
-                            glitchPass.enabled = false;
-                            glitchPass.goWild = false;
-                            glitchTimeout = null;
-                        }, 800);
-                    }
-
-                    // Инициализируем аудио при первом взаимодействии
-                    if (!audioCtx) initAudio();
-                }
-                // Пульсация масштаба
-                const s = 1 + 0.12 * Math.sin(Date.now() * 0.005);
-                hoveredComp.mesh.scale.set(s, s, s);
-            } else {
-                // Если ничего не наведено, но заклинание висит – убираем
-                if (currentHover) {
-                    // уже обработано выше
-                }
+                glitchPass.enabled = true;
+                glitchPass.goWild = true;
+                glitchTimeout = setTimeout(() => {
+                    glitchPass.goWild = false;
+                    glitchPass.enabled = false;
+                }, 150);
             }
         }
 
-        window.addEventListener('mousemove', onMouseMove, false);
-        window.addEventListener('mouseleave', () => {
-            if (currentHover) {
-                currentHover.hover = false;
-                currentHover.mesh.scale.set(1, 1, 1);
-                document.getElementById('spell-text').classList.remove('visible');
-                glitchPass.enabled = false;
-                glitchPass.goWild = false;
-                if (glitchTimeout) {
-                    clearTimeout(glitchTimeout);
-                    glitchTimeout = null;
-                }
-                currentHover = null;
-            }
-        });
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('click', () => { initAudio(); });
 
-        // Touch support
-        window.addEventListener('touchmove', (e) => {
-            const touch = e.touches[0];
-            if (touch) {
-                const ev = new MouseEvent('mousemove', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY
-                });
-                onMouseMove(ev);
-            }
-        }, { passive: true });
-
-        // ----- Документационная панель -----
+        // Управление модальным окном документации
         const docsBtn = document.getElementById('docs-btn');
         const docsPanel = document.getElementById('docs-panel');
         const docsClose = document.getElementById('docs-close');
 
         docsBtn.addEventListener('click', () => {
-            docsPanel.classList.toggle('active');
-            if (!audioCtx) initAudio();
-            playClick(1200, 0.05);
+            initAudio();
+            playClick(1000, 0.1);
+            docsPanel.classList.add('active');
         });
+
         docsClose.addEventListener('click', () => {
+            playClick(500, 0.08);
             docsPanel.classList.remove('active');
         });
+
         docsPanel.addEventListener('click', (e) => {
-            if (e.target === docsPanel) docsPanel.classList.remove('active');
+            if (e.target === docsPanel) {
+                docsPanel.classList.remove('active');
+            }
         });
 
-        // ----- Анимация -----
-        let clock = new THREE.Clock();
+        // Анимация
+        const clock = new THREE.Clock();
 
         function animate() {
-            const delta = clock.getDelta();
-            const elapsed = performance.now() / 1000;
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
 
-            // Пульсация дорожек
-            traceMeshes.forEach((item, index) => {
-                const pulse = Math.sin(elapsed * item.speed + item.phase) * 0.25 + 0.5;
-                item.mesh.material.opacity = Math.min(item.baseOpacity * (0.7 + pulse * 0.6), 0.95);
-                item.mesh.position.y = -0.02 + Math.sin(elapsed * 0.8 + index) * 0.015;
+            traceMeshes.forEach(item => {
+                const opacity = item.baseOpacity + Math.sin(elapsedTime * item.speed + item.phase) * 0.25;
+                item.mesh.material.opacity = Math.max(0.1, Math.min(1, opacity));
             });
 
-            // Вращение компонентов
             components.forEach(comp => {
                 if (comp.hover) {
-                    comp.mesh.rotation.x += comp.rotSpeed * 1.8;
-                    comp.mesh.rotation.y += comp.rotSpeed * 2.2;
-                    comp.mesh.rotation.z += comp.rotSpeed * 0.6;
-                    const bob = Math.sin(elapsed * 2.5 + comp.type.length) * 0.03;
-                    comp.mesh.position.y = comp.basePos.y + bob;
+                    comp.mesh.rotation.y += 0.03;
                 } else {
-                    comp.mesh.rotation.y += comp.rotSpeed * 0.3;
-                    comp.mesh.rotation.x += comp.rotSpeed * 0.1;
-                    comp.mesh.position.y += (comp.basePos.y - comp.mesh.position.y) * 0.02;
+                    comp.mesh.rotation.y += comp.rotSpeed;
+                    comp.mesh.position.lerp(comp.basePos, 0.05);
                 }
             });
 
-            // Динамическое изменение звука (частота дрона) по движению мыши
-            if (audioCtx && droneOsc) {
-                // Привязываем частоту к положению мыши (если мышь в окне)
-                const freq = 40 + (mouse.x * 0.5 + 0.5) * 60 + (mouse.y * 0.5 + 0.5) * 30;
-                droneOsc.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
-                // фильтр
-                filter.frequency.setTargetAtTime(150 + (mouse.x * 0.5 + 0.5) * 200, audioCtx.currentTime, 0.1);
-            }
+            camera.position.x = Math.sin(elapsedTime * 0.2) * 0.5;
+            camera.position.y = 4 + Math.cos(elapsedTime * 0.3) * 0.2;
+            camera.lookAt(0, 0, 0);
 
-            // Камера дышит
-            const angle = elapsed * 0.04;
-            const cx = Math.sin(angle) * 2.5;
-            const cz = 10 + Math.sin(angle * 0.7) * 1.2;
-            camera.position.x += (cx - camera.position.x) * 0.005;
-            camera.position.z += (cz - camera.position.z) * 0.005;
-            camera.lookAt(0, 0.2, 0);
-
-            // Рендер через композер
             composer.render();
-
-            requestAnimationFrame(animate);
         }
 
         animate();
 
-        // ----- Ресайз -----
+        // Ресайз окна
         window.addEventListener('resize', () => {
-            const w = window.innerWidth;
-            const h = window.innerHeight;
-            camera.aspect = w / h;
+            camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
-            renderer.setSize(w, h);
-            composer.setSize(w, h);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
         });
-
-        // ----- Инициализация аудио при первом клике (политика браузера) -----
-        document.addEventListener('click', () => {
-            if (!audioCtx) initAudio();
-        }, { once: true });
-
-        console.log('🟢 Daxo OS Macro-Cosmic PCB — Enhanced');
     </script>
 </body>
 </html>
-   
