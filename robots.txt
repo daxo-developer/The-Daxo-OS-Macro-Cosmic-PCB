@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://daxo-developer.github.io/The-Daxo-OS-Macro-Cosmic-PCB/sitemap.xml
