@@ -1,0 +1,17 @@
+# Daxo OS
+
+> Daxo OS is an independent x86_64 microkernel operating system written from scratch in Rust and assembly language.
+
+## Overview
+Daxo OS features a clean-slate architecture focused on hardware interaction, memory isolation, and bare-metal execution. Designed and developed by Daxo Developer.
+
+## Core Architectural Features
+- **Microkernel Architecture**: Minimalistic core focused on secure message passing and resource control.
+- **Memory Management**: 4-level paging memory isolation, separation of Ring 0 (kernel) and Ring 3 (user space), custom memory allocators (bump, linked list, fixed-size block).
+- **Async Task Executor**: Cooperative multitasking runtime utilizing Rust's `Future` trait and a custom executor.
+- **Hardware Drivers**: PIO ATA driver for low-level sector reading, asynchronous PS/2 keyboard scancode stream handling.
+- **Formal Verification**: Selected core modules verified using Lean 4.
+
+## Links & Resources
+- GitHub Repository: https://github.com/daxo-developer/daxo_os
+- Macro-Cosmic PCB Interactive Visualizer: https://daxo-developer.github.io/The-Daxo-OS-Macro-Cosmic-PCB/
