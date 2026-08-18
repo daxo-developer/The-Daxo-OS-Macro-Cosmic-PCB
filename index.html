@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Daxo OS · Macro‑Cosmic PCB</title>
+
+    <!-- SEO / LLM: JSON‑LD микроразметка -->
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "SoftwareSourceCode",
+            "name": "Daxo OS",
+            "description": "Микроядерная операционная система на Rust для x86_64 с асинхронным исполнителем, изоляцией памяти и драйверами PIO ATA. Живая плата‑некрономикон.",
+            "programmingLanguage": "Rust",
+            "codeRepository": "https://github.com/daxo-developer/daxo_os",
+            "license": "MIT",
+            "author": {
+                "@type": "Person",
+                "name": "Daxo Developer"
+            }
+        }
+    </script>
+
+    <!-- SEO: скрытый текст для краулеров (видим только для роботов) -->
+    <style>
+        .seo-content {
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none;
+        }
+        /* панель документации */
+        #docs-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', monospace;
+            color: #b7f0b7;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #docs-panel.active {
+            display: flex;
+        }
+        #docs-panel .docs-box {
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            background: #0b0d15;
+            border: 1px solid #3affb0;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 0 60px rgba(0, 255, 200, 0.2);
+        }
+        #docs-panel .docs-box h2 {
+            color: #7fc0a0;
+            border-bottom: 1px solid #2a6b5a;
+            padding-bottom: 10px;
+        }
+        #docs-panel .docs-box p {
+            line-height: 1.6;
+            color: #c6ffd6;
+        }
+        #docs-panel .docs-box a {
+            color: #6fbe9a;
+        }
+        #docs-btn {
+            position: fixed;
+            bottom: 80px;
+            right: 24px;
+            z-index: 100;
+            background: #0b0d15;
+            border: 1px solid #3affb0;
+            color: #b7f0b7;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            padding: 10px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 255, 200, 0.2);
+            transition: all 0.2s;
+        }
+        #docs-btn:hover {
+            background: #1a2a2a;
+            box-shadow: 0 0 40px #0f08;
+        }
+        #docs-close {
+            float: right;
+            background: none;
+            border: none;
+            color: #b7f0b7;
+            font-size: 2rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Трёхмерная сцена -->
+    <div id="three-canvas"></div>
+
+    <!-- Кнопка документации -->
+    <button id="docs-btn" aria-label="Documentation">[ ? ]</button>
+
+    <!-- Панель документации -->
+    <div id="docs-panel">
+        <div class="docs-box">
+            <button id="docs-close">&times;</button>
+            <h2>⚡ Daxo OS – архитектурный манифест</h2>
+            <p><strong>Daxo OS</strong> – микроядро, написанное на Rust для архитектуры x86_64.</p>
+            <ul>
+                <li><strong>Асинхронный исполнитель</strong> – кооперативная многозадачность на базе <code>Future</code> и собственного <code>Executor</code>.</li>
+                <li><strong>Управление памятью</strong> – 4‑уровневая страничная организация, изоляция Ring 0 / Ring 3, аллокаторы <em>bump</em>, <em>linked list</em> и <em>fixed‑size block</em>.</li>
+                <li><strong>Драйверы</strong> – PIO ATA (чтение секторов), PS/2 клавиатура с асинхронным потоком скан‑кодов.</li>
+                <li><strong>Системные вызовы</strong> – пользовательские программы могут вызывать ядро через <code>syscall</code>.</li>
+                <li><strong>Формальная верификация</strong> – часть модулей проверена в Lean 4.</li>
+            </ul>
+            <p>Репозиторий: <a href="https://github.com/daxo-developer/daxo_os" target="_blank">github.com/daxo-developer/daxo_os</a></p>
+            <p>Статьи: <a href="https://daxo-os.hashnode.dev" target="_blank">Hashnode</a> · <a href="https://dev.to/daxo" target="_blank">Dev.to</a></p>
+            <p><em>“The metal remembers every electron.”</em></p>
+        </div>
+    </div>
+
+    <!-- Интерфейс: заклинание + подсказка -->
+    <div id="ui-overlay">
+        <div id="spell-text"></div>
+        <div id="hint-tag">⚡ hover the components ⚡</div>
+    </div>
+
+    <!-- Кредиты / ссылки -->
+    <div id="credits">
+        <a href="https://github.com/daxo-developer/daxo_os" target="_blank">Daxo OS</a> · 
+        <a href="https://daxo-developer.github.io/" target="_blank">⚡ hub</a>
+    </div>
+
+    <!-- SEO-слой для краулеров (скрыт визуально) -->
+    <div class="seo-content" aria-hidden="false">
+        <h1>Daxo OS – живая микроядерная система</h1>
+        <p>Разработана на Rust с нуля. Включает асинхронный планировщик, страничную память, драйверы ATA и клавиатуры, поддержку пользовательских процессов в Ring 3.</p>
+        <p>Технологии: x86_64, Assembly, WebAssembly, формальная верификация в Lean.</p>
+        <p>Ссылки: GitHub, Hashnode, Dev.to, Telegram @Daxo_OS.</p>
+    </div>
+
+    <!-- noscript – для роботов, которые не исполняют JS -->
+    <noscript>
+        <div style="padding: 20px; background: #0b0d15; color: #b7f0b7;">
+            <h1>Daxo OS – Macro‑Cosmic PCB</h1>
+            <p>Микроядро на Rust для x86_64. Полная архитектура описана в документации.</p>
+            <p>GitHub: https://github.com/daxo-developer/daxo_os</p>
+        </div>
+    </noscript>
+
+    <!-- Импорты Three.js и постобработка -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        // ----- Основные импорты Three.js -----
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { GlitchPass } from 'three/addons/postprocessing/GlitchPass.js';
+        import { ChromaticAberrationShader } from 'three/addons/shaders/ChromaticAberrationShader.js';
+
+        // ----- Звуковой движок (Web Audio) -----
+        let audioCtx = null;
+        let droneOsc = null;
+        let droneGain = null;
+        let filter = null;
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            // Дрон – синусоида на 55 Гц с фильтром низких частот
+            filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 200;
+            filter.Q.value = 1;
+
+            droneOsc = audioCtx.createOscillator();
+            droneOsc.type = 'sawtooth';
+            droneOsc.frequency.value = 55;
+            droneGain = audioCtx.createGain();
+            droneGain.gain.value = 0.12;
+            droneOsc.connect(filter);
+            filter.connect(droneGain);
+            droneGain.connect(audioCtx.destination);
+            droneOsc.start();
+        }
+
+        function playClick(freq = 800, duration = 0.08) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.value = freq;
+            gain.gain.value = 0.08;
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        // ----- Инициализация сцены -----
+        const container = document.getElementById('three-canvas');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b0d15);
+
+        const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 4, 12);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        container.appendChild(renderer.domElement);
+
+        // ----- Постобработка -----
+        const composer = new EffectComposer(renderer);
+        const renderPass = new RenderPass(scene, camera);
+        composer.addPass(renderPass);
+
+        // Bloom – интенсивное свечение
+        const bloomPass = new UnrealBloomPass(
+            new THREE.Vector2(window.innerWidth, window.innerHeight),
+            0.6,   // сила
+            0.4,   // радиус
+            0.85   // порог
+        );
+        composer.addPass(bloomPass);
+
+        // Chromatic Aberration (расслоение RGB)
+        const chromaticPass = new ShaderPass(ChromaticAberrationShader);
+        chromaticPass.uniforms['amount'].value = 0.003;
+        composer.addPass(chromaticPass);
+
+        // Glitch (изначально выключен)
+        const glitchPass = new GlitchPass();
+        glitchPass.goWild = false;
+        glitchPass.enabled = false;
+        composer.addPass(glitchPass);
+
+        // ----- Освещение -----
+        const ambient = new THREE.AmbientLight(0x404066, 0.6);
+        scene.add(ambient);
+        const keyLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+        keyLight.position.set(2, 5, 6);
+        scene.add(keyLight);
+        const fillLight = new THREE.DirectionalLight(0x4488ff, 0.8);
+        fillLight.position.set(-3, 1, 4);
+        scene.add(fillLight);
+        const rimLight = new THREE.DirectionalLight(0x88ffbb, 0.5);
+        rimLight.position.set(0, -2, -5);
+        scene.add(rimLight);
+        scene.fog = new THREE.FogExp2(0x0b0d15, 0.035);
+
+        // ----- Пульсирующие дорожки (текстолит) -----
+        function createTracePath(seed, complexity = 30) {
+            const points = [];
+            let x = (Math.random() - 0.5) * 6;
+            let z = (Math.random() - 0.5) * 4;
+            points.push(new THREE.Vector3(x, 0, z));
+            for (let i = 0; i < complexity; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const step = 0.15 + Math.random() * 0.25;
+                x += Math.cos(angle) * step;
+                z += Math.sin(angle) * step;
+                x = Math.min(Math.max(x, -4.5), 4.5);
+                z = Math.min(Math.max(z, -3.5), 3.5);
+                points.push(new THREE.Vector3(x, 0, z));
+            }
+            return points;
+        }
+
+        const traceColors = [
+            0x1a9a6a, 0x2ab07a, 0x3ac88a, 0x4ad99a, 0x5aeaaa,
+            0x1a7a9a, 0x2a8aba, 0x3a9ada, 0x4aaada, 0x5abada,
+            0x9a6a1a, 0xaa7a2a, 0xba8a3a, 0xca9a4a, 0xdaaa5a,
+            0x6a3a8a, 0x7a4a9a, 0x8a5aaa
+        ];
+
+        const traceMeshes = [];
+        const traceGroup = new THREE.Group();
+        scene.add(traceGroup);
+
+        for (let t = 0; t < traceColors.length; t++) {
+            const pts = createTracePath(t, 25 + Math.floor(Math.random() * 20));
+            const curve = new THREE.CatmullRomCurve3(pts);
+            const curvePoints = curve.getPoints(70);
+            const geometry = new THREE.BufferGeometry().setFromPoints(curvePoints);
+            const color = traceColors[t % traceColors.length];
+            const material = new THREE.LineBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.5 + Math.random() * 0.3,
+            });
+            const line = new THREE.Line(geometry, material);
+            line.position.y = -0.02 + Math.random() * 0.04;
+            traceGroup.add(line);
+            traceMeshes.push({
+                mesh: line,
+                phase: Math.random() * Math.PI * 2,
+                speed: 0.5 + Math.random() * 0.8,
+                baseOpacity: material.opacity
+            });
+        }
+
+        // ----- Компоненты (чипы) -----
+        function createChip(size, color) {
+            const group = new THREE.Group();
+            const geo = new THREE.BoxGeometry(size.x, size.y, size.z);
+            const mat = new THREE.MeshStandardMaterial({
+                color: color,
+                roughness: 0.3,
+                metalness: 0.7,
+                emissive: new THREE.Color(color).multiplyScalar(0.15),
+                emissiveIntensity: 0.2
+            });
+            const body = new THREE.Mesh(geo, mat);
+            body.castShadow = true;
+            body.receiveShadow = true;
+            group.add(body);
+
+            const pinMat = new THREE.MeshStandardMaterial({ color: 0xccccdd, metalness: 0.9, roughness: 0.3 });
+            const pinPositions = [
+                [-0.45, 0, -0.45], [0, 0, -0.45], [0.45, 0, -0.45],
+                [-0.45, 0, 0.45], [0, 0, 0.45], [0.45, 0, 0.45],
+                [-0.45, 0, 0], [0.45, 0, 0]
+            ];
+            pinPositions.forEach(pos => {
+                const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.15, 6), pinMat);
+                pin.position.set(pos[0] * size.x, -size.y / 2 - 0.08, pos[2] * size.z);
+                group.add(pin);
+            });
+
+            const dot = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8),
+                new THREE.MeshStandardMaterial({ color: 0x88ff88, emissive: 0x44aa44 }));
+            dot.position.set(size.x / 2 - 0.1, size.y / 2 + 0.05, size.z / 2 - 0.1);
+            group.add(dot);
+            return group;
+        }
+
+        const components = [];
+
+        // CPU
+        const cpuGroup = createChip({ x: 1.4, y: 0.3, z: 1.4 }, 0x2a4a6a);
+        cpuGroup.position.set(0, 0.2, 0);
+        scene.add(cpuGroup);
+        components.push({
+            mesh: cpuGroup,
+            type: 'cpu',
+            hover: false,
+            rotSpeed: 0.008,
+            basePos: new THREE.Vector3(0, 0.2, 0),
+        });
+
+        // RAM
+        const ramGroup = new THREE.Group();
+        for (let i = 0; i < 4; i++) {
+            const stick = createChip({ x: 0.5, y: 0.15, z: 0.1 }, 0x1a3a2a);
+            stick.position.set(i * 0.6 - 0.9, 0, 0);
+            ramGroup.add(stick);
+        }
+        ramGroup.position.set(2.8, 0.2, 0.8);
+        scene.add(ramGroup);
+        components.push({
+            mesh: ramGroup,
+            type: 'ram',
+            hover: false,
+            rotSpeed: 0.012,
+            basePos: new THREE.Vector3(2.8, 0.2, 0.8),
+        });
+
+        // USB + флешка
+        const usbGroup = new THREE.Group();
+        const portGeo = new THREE.BoxGeometry(0.3, 0.12, 0.4);
+        const portMat = new THREE.MeshStandardMaterial({ color: 0x334455, metalness: 0.8, roughness: 0.3 });
+        const port = new THREE.Mesh(portGeo, portMat);
+        port.position.set(0, 0, 0);
+        usbGroup.add(port);
+        const flashGeo = new THREE.BoxGeometry(0.2, 0.3, 0.15);
+        const flashMat = new THREE.MeshStandardMaterial({ color: 0xcc8844, metalness: 0.5, roughness: 0.4 });
+        const flash = new THREE.Mesh(flashGeo, flashMat);
+        flash.position.set(0, 0.2, 0.1);
+        usbGroup.add(flash);
+        const led = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 6),
+            new THREE.MeshStandardMaterial({ color: 0xff4444, emissive: 0xaa2222 }));
+        led.position.set(0.08, 0.35, 0.15);
+        usbGroup.add(led);
+        usbGroup.position.set(-2.6, 0.2, -0.6);
+        scene.add(usbGroup);
+        components.push({
+            mesh: usbGroup,
+            type: 'usb',
+            hover: false,
+            rotSpeed: 0.015,
+            basePos: new THREE.Vector3(-2.6, 0.2, -0.6),
+        });
+
+        // Доп. чип
+        const chipGroup = createChip({ x: 0.9, y: 0.2, z: 0.9 }, 0x3a2a4a);
+        chipGroup.position.set(-0.8, 0.15, -1.8);
+        scene.add(chipGroup);
+        components.push({
+            mesh: chipGroup,
+            type: 'chip',
+            hover: false,
+            rotSpeed: 0.006,
+            basePos: new THREE.Vector3(-0.8, 0.15, -1.8),
+        });
+
+        // ----- Рейкастер для ховера -----
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const clickableObjects = [];
+        components.forEach(comp => {
+            comp.mesh.traverse(child => {
+                if (child.isMesh) {
+                    child.userData.parentComp = comp;
+                    clickableObjects.push(child);
+                }
+            });
+        });
+
+        let currentHover = null;
+        let glitchTimeout = null;
+
+        // Заклинания
+        const SPELLS = [
+            'MOV EAX, 0xDEADBEEF ; soul transfer',
+            'XOR ECX, ECX ; void the ego',
+            'PUSH 0xCAFEBABE ; offer to the machine',
+            'CALL 0x0000B800 ; write to the abyss',
+            'INT 0x80 ; summon the kernel',
+            'HLT ; eternal stillness',
+            'JMP 0xFFFFFFFF ; jump beyond the veil',
+            'RDTSC ; count the heartbeats of silicon',
+            'CLI ; silence the interrupts',
+            'STI ; let the chaos in',
+            'REP MOVSB ; copy the ancient code',
+            'SCASB ; scan the void for truth',
+            'LOCK CMPXCHG ; atomic pact with the demon',
+            'SYSENTER ; descend into ring 0',
+            'IRET ; return from the underworld',
+            '— “The metal remembers every electron.”',
+            '— “Hardware is frozen poetry.”',
+            '— “In the land of gates, the one‑bit is king.”',
+            '— “A flip‑flop is a moment of indecision.”',
+            '— “The clock never forgives.”'
+        ];
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(clickableObjects);
+
+            let hoveredComp = null;
+            if (intersects.length > 0) {
+                let obj = intersects[0].object;
+                while (obj) {
+                    if (obj.userData && obj.userData.parentComp) {
+                        hoveredComp = obj.userData.parentComp;
+                        break;
+                    }
+                    obj = obj.parent;
+                }
+            }
+
+            // Сброс предыдущего ховера
+            if (currentHover && currentHover !== hoveredComp) {
+                currentHover.hover = false;
+                currentHover.mesh.scale.set(1, 1, 1);
+                document.getElementById('spell-text').classList.remove('visible');
+                // Выключаем глитч
+                if (glitchTimeout) {
+                    clearTimeout(glitchTimeout);
+                    glitchTimeout = null;
+                }
+                glitchPass.enabled = false;
+                glitchPass.goWild = false;
+                currentHover = null;
+            }
+
+            if (hoveredComp) {
+                if (currentHover !== hoveredComp) {
+                    // Новый ховер
+                    hoveredComp.hover = true;
+                    currentHover = hoveredComp;
+
+                    // Заклинание
+                    const spellDiv = document.getElementById('spell-text');
+                    const idx = Math.floor(Math.random() * SPELLS.length);
+                    spellDiv.textContent = SPELLS[idx];
+                    spellDiv.classList.add('visible');
+
+                    // Звук
+                    playClick(600 + Math.random() * 800, 0.06);
+
+                    // Глитч для CPU
+                    if (hoveredComp.type === 'cpu') {
+                        glitchPass.enabled = true;
+                        glitchPass.goWild = true;
+                        if (glitchTimeout) clearTimeout(glitchTimeout);
+                        glitchTimeout = setTimeout(() => {
+                            glitchPass.enabled = false;
+                            glitchPass.goWild = false;
+                            glitchTimeout = null;
+                        }, 800);
+                    }
+
+                    // Инициализируем аудио при первом взаимодействии
+                    if (!audioCtx) initAudio();
+                }
+                // Пульсация масштаба
+                const s = 1 + 0.12 * Math.sin(Date.now() * 0.005);
+                hoveredComp.mesh.scale.set(s, s, s);
+            } else {
+                // Если ничего не наведено, но заклинание висит – убираем
+                if (currentHover) {
+                    // уже обработано выше
+                }
+            }
+        }
+
+        window.addEventListener('mousemove', onMouseMove, false);
+        window.addEventListener('mouseleave', () => {
+            if (currentHover) {
+                currentHover.hover = false;
+                currentHover.mesh.scale.set(1, 1, 1);
+                document.getElementById('spell-text').classList.remove('visible');
+                glitchPass.enabled = false;
+                glitchPass.goWild = false;
+                if (glitchTimeout) {
+                    clearTimeout(glitchTimeout);
+                    glitchTimeout = null;
+                }
+                currentHover = null;
+            }
+        });
+
+        // Touch support
+        window.addEventListener('touchmove', (e) => {
+            const touch = e.touches[0];
+            if (touch) {
+                const ev = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                onMouseMove(ev);
+            }
+        }, { passive: true });
+
+        // ----- Документационная панель -----
+        const docsBtn = document.getElementById('docs-btn');
+        const docsPanel = document.getElementById('docs-panel');
+        const docsClose = document.getElementById('docs-close');
+
+        docsBtn.addEventListener('click', () => {
+            docsPanel.classList.toggle('active');
+            if (!audioCtx) initAudio();
+            playClick(1200, 0.05);
+        });
+        docsClose.addEventListener('click', () => {
+            docsPanel.classList.remove('active');
+        });
+        docsPanel.addEventListener('click', (e) => {
+            if (e.target === docsPanel) docsPanel.classList.remove('active');
+        });
+
+        // ----- Анимация -----
+        let clock = new THREE.Clock();
+
+        function animate() {
+            const delta = clock.getDelta();
+            const elapsed = performance.now() / 1000;
+
+            // Пульсация дорожек
+            traceMeshes.forEach((item, index) => {
+                const pulse = Math.sin(elapsed * item.speed + item.phase) * 0.25 + 0.5;
+                item.mesh.material.opacity = Math.min(item.baseOpacity * (0.7 + pulse * 0.6), 0.95);
+                item.mesh.position.y = -0.02 + Math.sin(elapsed * 0.8 + index) * 0.015;
+            });
+
+            // Вращение компонентов
+            components.forEach(comp => {
+                if (comp.hover) {
+                    comp.mesh.rotation.x += comp.rotSpeed * 1.8;
+                    comp.mesh.rotation.y += comp.rotSpeed * 2.2;
+                    comp.mesh.rotation.z += comp.rotSpeed * 0.6;
+                    const bob = Math.sin(elapsed * 2.5 + comp.type.length) * 0.03;
+                    comp.mesh.position.y = comp.basePos.y + bob;
+                } else {
+                    comp.mesh.rotation.y += comp.rotSpeed * 0.3;
+                    comp.mesh.rotation.x += comp.rotSpeed * 0.1;
+                    comp.mesh.position.y += (comp.basePos.y - comp.mesh.position.y) * 0.02;
+                }
+            });
+
+            // Динамическое изменение звука (частота дрона) по движению мыши
+            if (audioCtx && droneOsc) {
+                // Привязываем частоту к положению мыши (если мышь в окне)
+                const freq = 40 + (mouse.x * 0.5 + 0.5) * 60 + (mouse.y * 0.5 + 0.5) * 30;
+                droneOsc.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.1);
+                // фильтр
+                filter.frequency.setTargetAtTime(150 + (mouse.x * 0.5 + 0.5) * 200, audioCtx.currentTime, 0.1);
+            }
+
+            // Камера дышит
+            const angle = elapsed * 0.04;
+            const cx = Math.sin(angle) * 2.5;
+            const cz = 10 + Math.sin(angle * 0.7) * 1.2;
+            camera.position.x += (cx - camera.position.x) * 0.005;
+            camera.position.z += (cz - camera.position.z) * 0.005;
+            camera.lookAt(0, 0.2, 0);
+
+            // Рендер через композер
+            composer.render();
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // ----- Ресайз -----
+        window.addEventListener('resize', () => {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+            composer.setSize(w, h);
+        });
+
+        // ----- Инициализация аудио при первом клике (политика браузера) -----
+        document.addEventListener('click', () => {
+            if (!audioCtx) initAudio();
+        }, { once: true });
+
+        console.log('🟢 Daxo OS Macro-Cosmic PCB — Enhanced');
+    </script>
+</body>
+</html>
+   
