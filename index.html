@@ -255,7 +255,7 @@
         composer.addPass(bloomPass);
 
         // Chromatic Aberration (расслоение RGB)
-        const chromaticPass = new ShaderPass(ChromaticAberrationShader);
+        const chromaticPass = new ShaderPass(RGBShiftShader);
         chromaticPass.uniforms['amount'].value = 0.003;
         composer.addPass(chromaticPass);
 
